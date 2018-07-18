@@ -71,30 +71,6 @@ def eq_position(ho, to, verbose=False):
     return res
 
 
-# def force_num(position, ho, to):
-#     """
-#     numerical calculation of the force (Jacobian) by finite difference differentiation of the potential
-#     check with mathematica, numerical differentiation doesn't give good result (not sure if there is a bug in the coding or if it is due to numerical uncertainty)
-#     Args:
-#         position: vector containing the position and orientation [x, y, z, theta, phi]
-#         ho: initial cooldown height
-#         to: initial oritentation theta_0
-#         initial position height ho and angle theta (xy and phi initial are 0 due to symmetry)
-#
-#     Returns:
-#
-#     """
-#
-#     x, y, z, t, p = position ## positions xyz and orientation theta and phi
-#
-#     fx = num_diff(position, ho, to, 'x', dx=1e-9)
-#     fy = num_diff(position, ho, to, 'y', dx=1e-9)
-#     fz = num_diff(position, ho, to, 'z', dx=1e-9)
-#     ft = num_diff(position, ho, to, 't', dx=1e-9)
-#     fp = num_diff(position, ho, to, 'p', dx=1e-9)
-#
-#     return fx, fy, fz, ft, fp
-    
     
 def force(position, ho, to):
     """
@@ -148,10 +124,6 @@ def force_num(position, ho, to, dx=default_dx):
 
     return force
 
-# def force_num(position, ho, to, dx=default_dx):
-#
-#     force = [potential_derivative_num(position, ho, to, coordinate, dx=dx) for coordinate in 'xyztp']
-#     return force
 
 def get_parameters(physical_parameters):
     """
@@ -197,51 +169,9 @@ def get_parameters(physical_parameters):
 def stiffness_matrix_num(position, ho, to, dx=default_dx):
     """"""
 
-    print('position_eq', position)
-
-    H = nd.Hessian(f)([1, 2, 3])
-
-
-    def func_force(x, i, j, position_eq):
-
-
-        # print(position_eq)
-        position_x = position_eq
-
-        # print(i, j)
-        position_x[i] = x
-
-        # print(i, j, position[i]-position_x[i])
-
-        return force_num(position_x, ho, to, dx=dx)[j]
-
-    stiffness = np.zeros([5,5])
-    for i in range(5):
-        for j in range(5):
-            position_eq = deepcopy(position)
-            stiffness[i,j] = derivative(func_force, position_eq[i], args=(i, j, position_eq), dx=dx, n=1, order=3)
-
+    stiffness = nd.Hessian(potential)(position, ho, to)
 
     return stiffness
-
-def potential_derivative_num(position, ho, to, coordinate, dx=default_dx):
-
-    # print(position)
-    position_x = position
-
-    if isinstance(coordinate, str):
-        coordinate = {'x': 0, 'y': 1, 'z': 2, 't': 3, 'p': 4}[coordinate]
-
-    def func(x):
-
-        position_x[coordinate] = x
-        return potential(position_x, ho, to)
-
-    return derivative(func, position[coordinate], dx=dx, n=1, args=(), order=3)
-
-                                                                                                          
-
-# def type_II_superconductor_stiffness(position, initial_consitions):
 
 def frequencies(ho, to, physical_parameters, dx=default_dx, verbose=False):
     """
@@ -285,51 +215,3 @@ def frequencies(ho, to, physical_parameters, dx=default_dx, verbose=False):
 
     return W, k
 
-
-
-    
-    
-def numerical_derivative(function, point, args, order=1, epsilon=1e-10):
-    """
-    Finds the nth derivative of a 3D scalar function numerically, using the finite
-    difference formulas found at the following url:
-    https://en.wikipedia.org/wiki/Finite_difference_coefficient
-    """
-
-    # coefficients of numerical derivatieves for orders 1 through 4,
-    # in the form of a list of tuples (grid_position, coefficient)
-    if order == 0:
-        function_value = function(point, *args)
-        return np.array([function_value, function_value, function_value])
-    elif order == 1:
-        coeffs = np.array([[-1,-0.5], [0,0], [1,0.5]])
-    elif order == 2:
-        coeffs = np.array([[-1, 1], [0,-2], [1, 1]])
-    elif order == 3:
-        coeffs = np.array([[-2, -0.5], [-1, 1], [0,0], [1, -1], [2, 0.5]])
-    elif order == 4:
-        coeffs = np.array([[-2, 1], [-1, -4], [0, 6], [1, -4], [2, 1]])
-    else:
-        print('Can only do zeroth through fourth derivative')
-        raise ValueError
-    
-
-    # Get vectors for small steps in x, y, and z
-    tiny_x_step, tiny_y_step, tiny_z_step, tiny_t_step, tiny_p_step = epsilon*np.eye(5)
-
-    finite_difference_x = np.sum([coeff * function(point + tiny_x_step*grid_pos, *args)
-          for grid_pos, coeff in coeffs if coeff], axis=0)
-
-    finite_difference_y = np.sum([coeff * function(point + tiny_y_step*grid_pos, *args)
-          for grid_pos, coeff in coeffs if coeff], axis=0)
-
-    finite_difference_z = np.sum([coeff * function(point + tiny_z_step*grid_pos, *args)
-          for grid_pos, coeff in coeffs if coeff], axis=0)
-
-    finite_difference_t = np.sum([coeff * function(point + tiny_t_step*grid_pos, *args)
-          for grid_pos, coeff in coeffs if coeff], axis=0)
-    
-    finite_difference_p = np.sum([coeff * function(point + tiny_p_step*grid_pos, *args)
-          for grid_pos, coeff in coeffs if coeff], axis=0)
-    
-    return np.transpose([finite_difference_x, finite_difference_y, finite_difference_z, finite_difference_t, finite_difference_p])/(epsilon**order)
