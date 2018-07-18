@@ -38,9 +38,12 @@ def potential(position, ho, to):
 
     # print('denom_', denom_1+denom_2)
     # print('x', -16*(denom_1 + denom_2) / (3*((z+ho)**2+x**2+y**2)**(5/2)))
-
+    #
+    # xx= (3*((z+ho)**2+x**2+y**2)**(5/2))
+    # if xx<1e-7:
+    #     print('aa', position)
+    # print('aa', xx)
     U = z + (3+cos(2*t))/(6*z**3)-16*(denom_1 + denom_2) / (3*((z+ho)**2+x**2+y**2)**(5/2))
-
     # print('denom_1', denom_1)
     # print('denom_2', denom_2)
     assert isinstance(U, float)
@@ -118,10 +121,11 @@ def force(position, ho, to):
     return -np.array([fx, fy, fz, ft, fp])
 
 
-def force_num(position, ho, to, dx=default_dx):
+def force_num(position, ho, to, order=2, verbose=False):
 
-    force = -nd.Gradient(potential)(position, ho, to)
-
+    # print('adas', ho, to, verbose)
+    # if verbose:
+    force = -nd.Gradient(potential, order=order)(position, ho, to)
     return force
 
 
@@ -166,12 +170,53 @@ def get_parameters(physical_parameters):
     parameters['Us'] = mass * g*hI
     return parameters
 
-def stiffness_matrix_num(position, ho, to, dx=default_dx):
-    """"""
+def stiffness_matrix_num(position, ho, to, order=2, analytic_function = 'force'):
+    """
 
-    stiffness = nd.Hessian(potential)(position, ho, to)
+    :param position:
+    :param ho:
+    :param to:
+    :param order:
+    :return:
+    """
+
+    print('calculating stiffness numerically, order:', order)
+
+
+    if analytic_function == 'potential':
+        stiffness = nd.Hessian(potential)(position, ho, to)
+    elif analytic_function == 'force':
+        stiffness = -nd.Jacobian(force)(position, ho, to)  # negative sign because we define the force as the negative gradient
+    elif analytic_function == 'k':
+        print('NOT IMPLEMENTED YET')
+    else:
+        print('select one of k, potential or force')
+
 
     return stiffness
+
+def stiffness_matrix_num_diag(position, ho, to):
+    """
+
+    :param position:
+    :param ho:
+    :param to:
+    :param dx:
+    :return:
+    """
+
+    if analytic_function == 'potential':
+        stiffness = nd.Hessdiag(potential)(position, ho, to)
+    elif analytic_function == 'force':
+        stiffness = nd.Jacobian(force, order=order)(position, ho, to)
+    elif analytic_function == 'k':
+        print('NOT IMPLEMENTED YET')
+    else:
+        print('select one of k, potential or force')
+
+    return stiffness
+
+
 
 def frequencies(ho, to, physical_parameters, dx=default_dx, verbose=False):
     """
