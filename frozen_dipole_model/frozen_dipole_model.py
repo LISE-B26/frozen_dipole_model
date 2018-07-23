@@ -263,7 +263,7 @@ def stiffness_matrix_num(position, ho, to, analytic_function = 'force', normaliz
     return stiffness
 
 
-def frequencies(ho, to, physical_parameters, set_y_phi_zero=True, normalization='hI', verbose=False):
+def frequencies(ho, to, physical_parameters, set_y_phi_zero=True, normalization='hI', return_eq_positions = False, verbose=False):
     """
 
 
@@ -275,6 +275,10 @@ def frequencies(ho, to, physical_parameters, set_y_phi_zero=True, normalization=
     Returns: the equilibrium position for a given initial conditions
 
     """
+
+    if to == 0:
+        to = 1e-5
+
     for key in physical_parameters.keys():
         assert key in physical_parameters
 
@@ -288,13 +292,10 @@ def frequencies(ho, to, physical_parameters, set_y_phi_zero=True, normalization=
 
 
 
-
-
-
     Us = parameters['Us']
 
-    print('position_eq (xyz in um)', to_physical_units(position_eq, normalization, parameters))
-    print('===> Us', Us)
+    # print('position_eq (xyz in um)', to_physical_units(position_eq, normalization, parameters))
+    # print('===> Us', Us)
 
     A2 = parameters['A']**2
 
@@ -313,5 +314,10 @@ def frequencies(ho, to, physical_parameters, set_y_phi_zero=True, normalization=
 
     eigen_values = np.linalg.eigvals(W)
 
-    return np.sqrt(eigen_values)/(2*np.pi)
+    eigen_frequencies = np.sqrt(eigen_values)/(2*np.pi)
+
+    if return_eq_positions:
+        return eigen_frequencies, position_eq
+    else:
+        return eigen_frequencies
 
