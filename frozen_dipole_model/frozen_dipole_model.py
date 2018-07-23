@@ -13,9 +13,18 @@ default_physical_parameters = {
     'earth_acceleration' : 9.84,  #m/s^2
     'vacuum_permeability' : np.pi*4e-7,  # H/m
     'radius':22.5e-6,  # m
-    'density':7600  # kg/m^3
+    'density':7600 # kg/m^3
 
 }
+
+# default_physical_parameters = {
+#     'Br' : 0.73,  # T
+#     'earth_acceleration' : 9.84,  #m/s^2
+#     'vacuum_permeability' : np.pi*4e-7,  # H/m
+#     'radius':22.5,  # um
+#     'density':7600  # kg/um^3
+#
+# }
 
 
 def wrap(phases):
@@ -181,14 +190,14 @@ def get_parameters(physical_parameters, normalization= 'hI'):
     """
 
     Args:
-        physical_parameters:
+        physical_parameters: lengths in um
 
     Returns:
 
     """
 
     if not 'earth_acceleration' in physical_parameters:
-        physical_parameters['earth_acceleration'] = 9.8  # m/s^2
+        physical_parameters['earth_acceleration'] = 9.84  # m/s^2
     if not 'vacuum_permeability' in physical_parameters:
         physical_parameters['vacuum_permeability'] = np.pi*4e-7  # H/m
 
@@ -203,14 +212,13 @@ def get_parameters(physical_parameters, normalization= 'hI'):
     a = physical_parameters['radius']
     density = physical_parameters['density']
     volume = 4*np.pi/3*a**3
-    mass = volume * density
+    mass = volume * density # kg
 
     moment_of_inertia = 2/5*mass*a**2
 
-    hI = (a**3*Br**2/(16*g*density*muo))**(0.25)
-    acrit = Br ** 2 / (16 * g * muo * density)
 
-
+    acrit = Br ** 2 / (16 * g * density * muo)# in m
+    hI = (a ** 3 * acrit) ** (0.25)  # meters
 
     parameters['mass_matrix'] = np.diag([mass, mass, mass, moment_of_inertia, moment_of_inertia])
 
@@ -223,7 +231,7 @@ def get_parameters(physical_parameters, normalization= 'hI'):
         parameters['Us'] = mass * g * acrit
     elif normalization == 'acrit':
         parameters['A'] = np.diag([1. / acrit, 1. / acrit, 1. / acrit, 1, 1])
-        parameters['Us'] = mass * g * a**3 / acrit**(-2)
+        parameters['Us'] = mass * g * a**3 * acrit**(-2)
 
 
     parameters['hI'] = hI
@@ -291,30 +299,29 @@ def frequencies(ho, to, physical_parameters, set_y_phi_zero=True, normalization=
     k = stiffness_matrix_num(position_eq, ho, to, normalization=normalization, alpha=alpha)
 
 
+    # to stay within small numbers we multiply Us by 1e18 and inv_m by 1e-18, so the two factors compensate in the end
+    Us = parameters['Us']*1e18
+    inv_m = np.linalg.inv(parameters['mass_matrix'])*1e-18
 
-    Us = parameters['Us']
 
-    # print('position_eq (xyz in um)', to_physical_units(position_eq, normalization, parameters))
-    # print('===> Us', Us)
+    A2 = parameters['A'] ** 2
 
-    A2 = parameters['A']**2
+    W = np.dot(A2 * inv_m, k)  # all the values of this matrix should be close to 1, that's why we don't multiply by Us here
 
-    inv_m = np.linalg.inv(parameters['mass_matrix'])
+    ## we know that W is not symmetric so we cant use eigh
+    eigen_values, eigen_vectors = np.linalg.eig(W)
 
-    # some consistency checks
-    if verbose:
-        print('checking consistency')
-        assert np.sum(A2-np.dot(parameters['A'], parameters['A']))==0
-        print(np.dot(inv_m, parameters['mass_matrix']))
+    eigen_frequencies = np.sqrt(Us*eigen_values)/(2*np.pi)
 
-        print(np.dot(A2 ,  inv_m) - A2 * inv_m)
-        print('consistency check passed')
+    # order the freq by their main component in the order xyz theta phi
+    freq_ordering = [np.argmax(abs(v)) for v in eigen_vectors]
 
-    W = Us * np.dot(A2 * inv_m, k)
+    # check that all the each frequency has a main projection
+    if np.allclose(sorted(freq_ordering), np.arange(5)):
+        eigen_frequencies = eigen_frequencies[freq_ordering]
+    else:
+        print('warning, the frequencies do not have a unique projection keep unsorted ('+normalization+')', ho, to)
 
-    eigen_values = np.linalg.eigvals(W)
-
-    eigen_frequencies = np.sqrt(eigen_values)/(2*np.pi)
 
     if return_eq_positions:
         return eigen_frequencies, position_eq
