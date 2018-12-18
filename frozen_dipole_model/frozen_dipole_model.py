@@ -13,7 +13,15 @@ default_physical_parameters = {
     'earth_acceleration' : 9.84,  #m/s^2
     'vacuum_permeability' : np.pi*4e-7,  # H/m
     'radius':22.5e-6,  # m
-    'density':7600 # kg/m^3
+    'density':7600,  # kg/m^3,
+    'Pgas': 1e-3,  # Pa  = 1e-5 mBar ~ 0.75e-5 Torr,
+    'Tgas': 4,  # K
+    'mgas':4.8e-26,  # kg,
+    'kB': 1.38065e-23,  # Boltzmann constant kg m^2 / s^2 K,
+    'london_penetration_depth': 100e-9,  # London penetration depth in meters
+    'coherence_length':10e-9,  # Coherence length in meters
+    'film_thickness': 100e-9,  # thin film thickness in meters
+    'fluxquantum':2.0678e-15,  # flux quantum  kg m^2 / s^2 A
 
 }
 
@@ -201,7 +209,14 @@ def get_parameters(physical_parameters, normalization= 'hI'):
     if not 'vacuum_permeability' in physical_parameters:
         physical_parameters['vacuum_permeability'] = np.pi*4e-7  # H/m
 
+
+    if not 'flux_depth' in physical_parameters:
+        physical_parameters['flux_depth'] = 100e-9  # 100nm
+    if not 'fluxquantum' in physical_parameters:
+        physical_parameters['fluxquantum'] = 2.067833831e-15  # Wb = T m^2
+
     for key in default_physical_parameters.keys():
+
         assert key in physical_parameters
 
 
@@ -215,6 +230,10 @@ def get_parameters(physical_parameters, normalization= 'hI'):
     mass = volume * density # kg
 
     moment_of_inertia = 2/5*mass*a**2
+
+    fluxquantum = physical_parameters['fluxquantum']
+
+    flux_depth = physical_parameters['flux_depth']
 
 
     acrit = Br ** 2 / (16 * g * density * muo)# in m
@@ -240,7 +259,10 @@ def get_parameters(physical_parameters, normalization= 'hI'):
     parameters['mass'] = mass
     parameters['alpha'] = a/acrit
 
+    parameters['beta_v'] = 8 * fluxquantum * hI / (np.pi * a**3* Br)
+
     parameters['a'] = a
+    parameters['flux_depth'] = flux_depth
 
     return parameters
 
@@ -271,7 +293,7 @@ def stiffness_matrix_num(position, ho, to, analytic_function = 'force', normaliz
     return stiffness
 
 
-def frequencies(ho, to, physical_parameters, set_y_phi_zero=True, normalization='hI', return_eq_positions = False, verbose=False):
+def frequencies(ho, to, physical_parameters, set_y_phi_zero=True, normalization='hI', verbose=False):
     """
 
 
@@ -323,8 +345,14 @@ def frequencies(ho, to, physical_parameters, set_y_phi_zero=True, normalization=
         print('warning, the frequencies do not have a unique projection keep unsorted ('+normalization+')', ho, to)
 
 
-    if return_eq_positions:
-        return eigen_frequencies, position_eq
-    else:
-        return eigen_frequencies
+    return {
+        'eigenfrequencies': eigen_frequencies,
+        'position_eq':position_eq,
+        'eigen_vectors':eigen_vectors
+    }
+
+    # if return_eq_positions:
+    #     return eigen_frequencies, position_eq
+    # else:
+    #     return eigen_frequencies
 
