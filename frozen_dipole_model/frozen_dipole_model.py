@@ -9,19 +9,24 @@ import numdifftools as nd
 default_dx = 1e-10
 
 default_physical_parameters = {
-    'Br' : 0.73,  # T
+    'Br' : 0.73,  # Teslas
     'earth_acceleration' : 9.84,  #m/s^2
     'vacuum_permeability' : np.pi*4e-7,  # H/m
-    'radius':22.5e-6,  # m
-    'density':7600,  # kg/m^3,
+    'radius': 23.2e-6,  # m
+    'density':7430,  # kg/m^3,
     'Pgas': 1e-3,  # Pa  = 1e-5 mBar ~ 0.75e-5 Torr,
-    'Tgas': 4,  # K
+    'Tgas': 4,  # Kelvins
     'mgas':4.8e-26,  # kg,
     'kB': 1.38065e-23,  # Boltzmann constant kg m^2 / s^2 K,
     'london_penetration_depth': 100e-9,  # London penetration depth in meters
-    'coherence_length':10e-9,  # Coherence length in meters
-    'film_thickness': 100e-9,  # thin film thickness in meters
+    # 'coherence_length':10e-9,  # Coherence length in meters
+    'thickness_SC': 500e-9,  # thin film thickness in meters
     'fluxquantum':2.0678e-15,  # flux quantum  kg m^2 / s^2 A
+    'eta_bulk': 3.5e-8, # (Newtons * Seconds )/ Meters^2
+    'hbar': 1.0545718e-34,  # Reduced Planck's constant [kg m^2 / s]
+    'chi_m_img':1e-2, # imaginary part of magnet susceptibility
+    'chi_sc_img':1e-3, # imaginary part of superconductor susceptibility
+    'Sdd':1e-22 # displacement noise (vibrations) m^2/Hz
 
 }
 
