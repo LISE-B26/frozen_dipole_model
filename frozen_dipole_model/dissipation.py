@@ -316,7 +316,7 @@ def calc_Qm(density, Br, chi_m_img, levitation_height, radius, frequency):
 def calc_Qsc(density, Br, chi_sc_img, levitation_height, radius, frequency, thickness_SC):
     omega = 2*np.pi*frequency
     volume_mag = 4*np.pi/3 * radius**3
-    volume_SC = ermnp.pi * radius ** 2 * thickness_SC
+    volume_SC = np.pi * radius ** 2 * thickness_SC
     return  density * mu0 / (chi_sc_img * Br**2) * (levitation_height / radius)** 8 * (volume_mag/volume_SC) * omega ** 2 * radius ** 2
 
 
