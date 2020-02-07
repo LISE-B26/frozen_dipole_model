@@ -6,7 +6,7 @@ Provides the code to calculate the mode frequencies and equilibrium positions fo
 ## Installation 
 Either close the github repository or install to `site-packages` using
 
-`install git+https://github.com/JanGieseler/frozen_dipole_model.git`
+`install git+https://github.com/LISE-B26/frozen_dipole_model.git`
 
 ## Use 
 All the main code is contained in `frozen_dipole_model/frozen_dipole_model.py`
